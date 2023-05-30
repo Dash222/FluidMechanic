@@ -8,7 +8,7 @@ struct FParticleData
 	
 public:
 	UPROPERTY(BlueprintReadWrite)
-	FVector Position;
+	FVector Location;
 	
 	UPROPERTY(BlueprintReadWrite)
 	FVector Velocity;
