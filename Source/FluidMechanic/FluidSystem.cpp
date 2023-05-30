@@ -6,16 +6,14 @@
 // Sets default values
 AFluidSystem::AFluidSystem()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
 }
 
 // Called when the game starts or when spawned
 void AFluidSystem::BeginPlay()
 {
 	Super::BeginPlay();
-	
 }
 
 // Called every frame
@@ -23,22 +21,84 @@ void AFluidSystem::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	UpdateHashMap();
+	FindContacts();
+
+	UpdateRenderData();
 }
 
 void AFluidSystem::SpawnParticle(FVector Location, FVector Velocity)
 {
+	ParticleDatas.Add({Location, Velocity});
 }
 
 void AFluidSystem::UpdateHashMap()
 {
+	ParticlesHashMap.Empty();
+
+	for (FParticleData& ParticleData : ParticleDatas)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s"), *ParticleData.Location.ToString());
+
+		int Key = GetHashKey(ParticleData.Location);
+		if (!ParticlesHashMap.Contains(Key))
+		{
+			ParticlesHashMap.Emplace(Key);
+		}
+
+		ParticlesHashMap[Key].ParticlesKey.Add(Key);
+	}
 }
 
-int AFluidSystem::GetKey(FVector Location)
+int AFluidSystem::GetHashKey(const FVector& Location) const
 {
-	return 0;
+	// Primes for hashing coordinates
+	static constexpr int P1 = 73856093;
+	static constexpr int P2 = 19349663;
+	static constexpr int P3 = 83492791;
+
+
+	const FIntVector CellCoord = FIntVector{Location / Config->CellSize.X};
+
+	return (CellCoord.X * P1) ^ (CellCoord.Y * P2) ^ (CellCoord.Z * P3);
 }
 
-void AFluidSystem::ComputeContact(int keyA, int KeyB)
+void AFluidSystem::FindContacts()
+{
+	ParticleContacts.Empty();
+
+	for (int ParticleIdx = 0; ParticleIdx < ParticleDatas.Num(); ParticleIdx++)
+	{
+		CheckNeighbours(ParticleIdx);
+	}
+}
+
+void AFluidSystem::CheckNeighbours(int ParticleIdx)
+{
+	const FParticleData& ParticleData = ParticleDatas[ParticleIdx];
+	for (int X = -1; X <= 1; X++)
+	{
+		for (int Y = -1; Y <= 1; Y++)
+		{
+			for (int Z = -1; Z <= 1; Z++)
+			{
+				int Key = GetHashKey(ParticleData.Location + FVector{
+					static_cast<float>(X), static_cast<float>(Y), static_cast<float>(Z)
+				});
+
+				if (!ParticlesHashMap.Contains(Key))
+					continue;
+				
+				for (const int idx : ParticlesHashMap[Key].ParticlesKey)
+				{
+					ComputeContact(ParticleIdx, idx);
+				}
+			}
+		}
+	}
+}
+
+void AFluidSystem::ComputeContact(int idxA, int idxB)
 {
 }
 
