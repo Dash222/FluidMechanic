@@ -6,9 +6,11 @@
 #include "FluidSystemConfig.h"
 #include "ParticleData.h"
 #include "GameFramework/Actor.h"
+#include "Containers/Array.h" 
+
 #include "FluidSystem.generated.h"
 
-USTRUCT()
+USTRUCT(BlueprintType)
 struct FParticleContact
 {
 	GENERATED_BODY()
@@ -21,6 +23,15 @@ struct FParticleContact
 
 	UPROPERTY()
 	float Distance;
+};
+
+USTRUCT(BlueprintType)
+struct FGridCell
+{
+	GENERATED_BODY()
+
+public:
+	TArray<int> Particles;
 };
 
 UCLASS()
@@ -50,13 +61,13 @@ private:
 	UPROPERTY()
 	float MinRadius;
 
-	UPROPERTY(BlueprintReadWrite)
-	TMap<int, TArray<int>> ParticlesHashMap;
+	UPROPERTY(BlueprintReadWrite, meta=(AllowPrivateAccess))
+	TMap<int, FGridCell> ParticlesHashMap;
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, meta=(AllowPrivateAccess))
 	TArray<FParticleData> ParticleDatas;
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, meta=(AllowPrivateAccess))
 	TArray<FParticleContact> ParticleContacts;
 
 	//Helper Functions
@@ -92,9 +103,9 @@ private:
 
 	UFUNCTION()
 	void Integrate(float DeltaTime);
-	
-	// Rendering
 
+public:
+	// Rendering
 	UFUNCTION(BlueprintNativeEvent)
 	void UpdateRenderData();
 };

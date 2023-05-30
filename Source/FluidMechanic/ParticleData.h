@@ -1,8 +1,11 @@
 ﻿#pragma once
+#include "ParticleData.generated.h"
 
 USTRUCT(BlueprintType)
 struct FParticleData
 {
+	GENERATED_BODY()
+	
 public:
 	UPROPERTY(BlueprintReadWrite)
 	FVector Position;
