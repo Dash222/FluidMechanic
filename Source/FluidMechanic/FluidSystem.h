@@ -110,13 +110,23 @@ public:
 	void UpdateRenderData();
 
 	UFUNCTION()
-	static float KernelDefault(float r, float h);
+	static float KernelDefault(float R, float H);
 
 	UFUNCTION()
-	static float KernelDefaultGradientFactor(const float r, const float h);
-	static float KernelDefaultLaplacian(const float r, const float h);
-	static float KernelSpikyGradientFactorNorm(const float r, const float h);
-	static float KernelSpikyGradientFactor(const float r, const float h);
-	static float KernelViscosityLaplacian(const float r, const float h);
-	static float KernelPoly6hGradientFactor(const float r, const float h);
+	static float KernelDefaultGradientFactor(const float R, const float H);
+	
+	UFUNCTION()
+	static float KernelDefaultLaplacian(const float R, const float H);
+	
+	UFUNCTION()
+	static float KernelSpikyGradientFactorNorm(const float R, const float H);
+	
+	UFUNCTION()
+	static float KernelSpikyGradientFactor(const float R, const float H);
+	
+	UFUNCTION()
+	static float KernelViscosityLaplacian(const float R, const float H);
+	
+	UFUNCTION()
+	static float KernelPoly6hGradientFactor(const float R, const float H);
 };
