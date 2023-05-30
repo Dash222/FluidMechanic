@@ -108,4 +108,15 @@ public:
 	// Rendering
 	UFUNCTION(BlueprintNativeEvent)
 	void UpdateRenderData();
+
+	UFUNCTION()
+	static float KernelDefault(float r, float h);
+
+	UFUNCTION()
+	static float KernelDefaultGradientFactor(float r, float h);
+	static float KernelDefaultLaplacian(float r, float h);
+	static float KernelSpikyGradientFactorNorm(float r, float h);
+	static float KernelSpikyGradientFactor(float r, float h);
+	static float KernelViscosityLaplacian(float r, float h);
+	static float KernelPoly6hGradientFactor(float r, float h);
 };
