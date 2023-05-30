@@ -31,7 +31,7 @@ struct FGridCell
 	GENERATED_BODY()
 
 public:
-	TArray<int> Particles;
+	TArray<int> ParticlesKey;
 };
 
 UCLASS()
@@ -69,17 +69,23 @@ private:
 
 	UPROPERTY(BlueprintReadWrite, meta=(AllowPrivateAccess))
 	TArray<FParticleContact> ParticleContacts;
-
+	
 	//Helper Functions
 
 	UFUNCTION()
 	void UpdateHashMap();
 
 	UFUNCTION()
-	int GetKey(FVector Location);
+	int GetHashKey(const FVector& Location) const;
 
 	UFUNCTION()
-	void ComputeContact(int keyA, int KeyB);
+	void FindContacts();
+
+	UFUNCTION()
+	void CheckNeighbours(int ParticleIdx);
+	
+	UFUNCTION()
+	void ComputeContact(int idxA, int idxB);
 	
 	//SPH
 

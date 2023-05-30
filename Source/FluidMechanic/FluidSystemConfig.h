@@ -16,37 +16,37 @@ class FLUIDMECHANIC_API UFluidSystemConfig : public UDataAsset
 	
 public:
 	UPROPERTY(EditAnywhere)
-	float Radius;
+	float Radius = 0.2f;
 
 	UPROPERTY(EditAnywhere)
-	float RestDensity;
+	float RestDensity = 0.59f;
 
 	UPROPERTY(EditAnywhere)
-	float Stiffness;
+	float Stiffness = 500.0f;
 
 	UPROPERTY(EditAnywhere)
-	float ParticleRadiusRatio;
+	float ParticleRadiusRatio = 3.0f;
 
 	UPROPERTY(EditAnywhere)
-	float Viscosity;
+	float Viscosity = 0.1f;
 
 	UPROPERTY(EditAnywhere)
-	float MaxSpeed;
+	float MaxSpeed = 10.f;
 
 	UPROPERTY(EditAnywhere)
-	float MaxAcceleration;
+	float MaxAcceleration = 900.f;
 
 	UPROPERTY(EditAnywhere)
-	float TimeScale;
+	float TimeScale = 1.0f;
 
 	UPROPERTY(EditAnywhere)
-	float WallFriction;
+	float WallFriction = 0.4f;
 
 	UPROPERTY(EditAnywhere)
-	float WallRestitution;
+	float WallRestitution = 0.4;
 
 	UPROPERTY(EditAnywhere)
-	float Mass;
+	float Mass = 1.0f;
 
 	UPROPERTY(EditAnywhere)
 	FVector MinCoords;
@@ -55,5 +55,5 @@ public:
 	FVector MaxCoords;
 	
 	UPROPERTY(EditAnywhere)
-	FVector CellSize;
+	FIntVector CellSize = FIntVector{10};
 };
