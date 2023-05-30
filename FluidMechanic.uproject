@@ -3,15 +3,11 @@
 	"EngineAssociation": "4.27",
 	"Category": "",
 	"Description": "",
-	"Plugins": [
+	"Modules": [
 		{
-			"Name": "SteamVR",
-			"Enabled": false,
-			"SupportedTargetPlatforms": [
-				"Win32",
-				"Win64",
-				"Linux"
-			]
+			"Name": "FluidMechanic",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
 		}
 	]
 }

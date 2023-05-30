@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="bd9cbbcc-732a-4cdf-8b10-5bf8e4c1787f" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/../Config/DefaultEditor.ini" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Config/DefaultEngine.ini" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Config/DefaultGame.ini" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Maps/TestFluid.umap" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Materials/M_Particles.uasset" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Meshes/ParticlesMesh.uasset" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Particles/CI_ParticleParameter.uasset" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Particles/NM_AddPressureForces.uasset" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Particles/NM_AddViscosityForces.uasset" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Particles/NM_ComputeDensity.uasset" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Particles/NM_ComputePressure.uasset" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Particles/NM_ComputeSurfaceTension.uasset" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Particles/NS_Particles.uasset" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../FluidMechanic.uproject" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ProjectId" id="2QW31IBdLVcVte1LQO33g82ddZa" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "WebServerToolWindowFactoryState": "false",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="bd9cbbcc-732a-4cdf-8b10-5bf8e4c1787f" name="Changes" comment="" />
+      <created>1685455297640</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1685455297640</updated>
+      <workItem from="1685455300236" duration="5000" />
+    </task>
+    <servers />
+  </component>
+  <component name="UnityUnitTestConfiguration" currentTestLauncher="NUnit" />
+  <component name="VcsManagerConfiguration">
+    <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
+  </component>
+</project>
