@@ -13,7 +13,8 @@ UCLASS()
 class FLUIDMECHANIC_API UFluidSystemConfig : public UDataAsset
 {
 	GENERATED_BODY()
-
+	
+public:
 	UPROPERTY(EditAnywhere)
 	float Radius;
 
@@ -52,4 +53,7 @@ class FLUIDMECHANIC_API UFluidSystemConfig : public UDataAsset
 
 	UPROPERTY(EditAnywhere)
 	FVector MaxCoords;
+	
+	UPROPERTY(EditAnywhere)
+	FVector CellSize;
 };
