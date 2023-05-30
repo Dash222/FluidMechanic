@@ -208,8 +208,8 @@ void AFluidSystem::Integrate(float DeltaTime)
 			ParticleData.Acceleration.Normalize();
 			ParticleData.Acceleration *= Config->MaxAcceleration;
 		}
-		
-		ParticleData.Velocity += (ParticleData.Acceleration + 9.81f) * DeltaTime;
+		FVector Gravity {0.0f, 0.0f, -9.81f};
+		ParticleData.Velocity += (ParticleData.Acceleration + Gravity) * DeltaTime;
 		
 		if(ParticleData.Velocity.Size() > Config->MaxSpeed)
 		{
