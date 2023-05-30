@@ -113,10 +113,10 @@ public:
 	static float KernelDefault(float r, float h);
 
 	UFUNCTION()
-	static float KernelDefaultGradientFactor(float r, float h);
-	static float KernelDefaultLaplacian(float r, float h);
-	static float KernelSpikyGradientFactorNorm(float r, float h);
-	static float KernelSpikyGradientFactor(float r, float h);
-	static float KernelViscosityLaplacian(float r, float h);
-	static float KernelPoly6hGradientFactor(float r, float h);
+	static float KernelDefaultGradientFactor(const float r, const float h);
+	static float KernelDefaultLaplacian(const float r, const float h);
+	static float KernelSpikyGradientFactorNorm(const float r, const float h);
+	static float KernelSpikyGradientFactor(const float r, const float h);
+	static float KernelViscosityLaplacian(const float r, const float h);
+	static float KernelPoly6hGradientFactor(const float r, const float h);
 };
