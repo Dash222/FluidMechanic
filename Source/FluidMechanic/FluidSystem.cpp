@@ -228,49 +228,77 @@ void AFluidSystem::UpdateRenderData_Implementation()
 float AFluidSystem::KernelDefault(const float R, const float H)
 {
 	const float H2 = H * H;
-	const float H4 = H2 * H2;
-	const float Kernel = H2 - R * R;
-	return (Kernel * Kernel * Kernel) * (4.0f / (PI * H4 * H4));
+	const float R2 = R * R;
+	float Res = 315.0f / (64.0f * PI * FMath::Pow(H, 9));
+	if(0.0f <= abs(R) <= H)
+		return  Res * FMath::Pow(H2 - R2, 3);
+	
+	if(abs(R) > H)
+		return 0.0f;
+
+	return 0.0f;
+	
+	//const float H4 = H2 * H2;
+	//const float Kernel = H2 - R * R;
+	//return (Kernel * Kernel * Kernel) * (4.0f / (PI * H4 * H4));
 }
 
 float AFluidSystem::KernelDefaultGradientFactor(const float R, const float H)
 {
 	const float H2 = H * H;
-	const float H4 = H2 * H2;
-	const float Kernel = H2 - R * R;
-	return -(Kernel * Kernel) * (6.0f / (PI * H4 * H4));
+	const float R2 = R * R;
+
+	return -945.0f / (32.0f * PI * FMath::Pow(H, 9)) * R *  FMath::Pow(H2 - R2, 2);
+	
+	//const float H4 = H2 * H2;
+	//const float Kernel = H2 - R * R;
+	//return -(Kernel * Kernel) * (6.0f / (PI * H4 * H4));
 }
 
 float AFluidSystem::KernelDefaultLaplacian(const float R, const float H)
 {
 	const float H2 = H * H;
-	const float H4 = H2 * H2;
-	const float Kernel = H2 - R * R;
-	return -(Kernel * Kernel) * (6.0f / (PI * H4 * H4)) * (3.0f * H2 - 7.0f * R * R);
+	const float R2 = R * R;
+
+	return -945.0f / (32.0f * PI * FMath::Pow(H, 9)) * (H2 - R2) * (3 * H2 - 7 * R2);
+	
+	//const float H4 = H2 * H2;
+	//const float Kernel = H2 - R * R;
+	//return -(Kernel * Kernel) * (6.0f / (PI * H4 * H4)) * (3.0f * H2 - 7.0f * R * R);
 }
 
 
 float AFluidSystem::KernelSpikyGradientFactorNorm(const float R, const float H)
 {
-	const float H2 = H * H;
-	const float H5 = H2 * H2 * H;
-	const float Kernel = H - R;
-	return Kernel * Kernel * (-15.0f / (PI * H5));
+	float Res = 15.0f / (PI * FMath::Pow(H, 6));
+	
+	if(0.0f <= abs(R) <= H)
+		return Res * FMath::Pow(H - abs(R), 3);
+	else if(abs(R) > H)
+		return 0.0f;
+	
+	return 0.0f;
+	//const float H2 = H * H;
+	//const float H5 = H2 * H2 * H;
+	//const float Kernel = H - R;
+	//return Kernel * Kernel * (-15.0f / (PI * H5));
 }
 
 float AFluidSystem::KernelSpikyGradientFactor(const float R, const float H)
 {
-	const float H2 = H * H;
-	const float H5 = H2 * H2 * H;
-	const float Kernel = H - R;
-	return Kernel * Kernel * (-15.0f / (PI * H5 * R));
+	return -45.0f / (PI * FMath::Pow(H, 6)) * R / abs(R) * FMath::Pow(H - abs(R), 2);
+	//const float H2 = H * H;
+	//const float H5 = H2 * H2 * H;
+	//const float Kernel = H - R;
+	//return Kernel * Kernel * (-15.0f / (PI * H5 * R));
 }
 
 float AFluidSystem::KernelViscosityLaplacian(const float R, const float H)
 {
-	const float H2 = H * H;
-	const float Kernel = H - R;
-	return Kernel * (30.0f / (PI * H2 * H2 * H));
+	return 45.0f / (PI * FMath::Pow(H, 6)) * (H - abs(R));
+	//const float H2 = H * H;
+	//const float Kernel = H - R;
+	//return Kernel * (30.0f / (PI * H2 * H2 * H));
 }
 
 float AFluidSystem::KernelPoly6hGradientFactor(const float R, const float H)
