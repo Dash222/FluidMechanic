@@ -129,7 +129,10 @@ public:
 	
 	UFUNCTION()
 	static float KernelSpikyGradientFactor(const float R, const float H);
-	
+
+	UFUNCTION()
+	FVector KernelSpikyGradientFactorVector(FVector R, float H);
+
 	UFUNCTION()
 	static float KernelViscosityLaplacian(const float R, const float H);
 	
