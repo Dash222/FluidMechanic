@@ -15,6 +15,10 @@ void AFluidSystem::BeginPlay()
 {
 	Super::BeginPlay();
 
+	MinRadius = Config->Radius * 0.1f;
+	float Volume = 4.f/3.f * Config->Radius * Config->Radius * Config->Radius * PI;
+	Config->Mass = Volume * Config->RestDensity;
+
 	for (int i = 0; i < ParticleDatas.Num(); i++)
 	{
 		ParticleDatas[i].Density = Config->RestDensity;
@@ -26,8 +30,26 @@ void AFluidSystem::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	DeltaTime *= Config->TimeScale;
+	// DeltaTime = FMath::Min(DeltaTime, 1.0f/ (200.0f * DeltaTime));
+
+	for (FParticleData& ParticleData : ParticleDatas)
+	{
+		ParticleData.Acceleration = FVector::ZeroVector;
+	}
+	
 	UpdateHashMap();
 	FindContacts();
+	
+	ComputeDensity();
+	ComputePressure();
+	ComputeSurfaceTension();
+
+	AddPressureForces();
+	// AddViscosityForces();
+
+	Integrate(DeltaTime);
+	ApplyBorderConstraints();
 
 	UpdateRenderData();
 }
@@ -41,17 +63,15 @@ void AFluidSystem::UpdateHashMap()
 {
 	ParticlesHashMap.Empty();
 
-	for (FParticleData& ParticleData : ParticleDatas)
+	for (int i = 0; i < ParticleDatas.Num(); i++)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s"), *ParticleData.Location.ToString());
-
-		int Key = GetHashKey(ParticleData.Location);
+		int Key = GetHashKey(ParticleDatas[i].Location);
 		if (!ParticlesHashMap.Contains(Key))
 		{
 			ParticlesHashMap.Emplace(Key);
 		}
 
-		ParticlesHashMap[Key].ParticlesKey.Add(Key);
+		ParticlesHashMap[Key].ParticlesKey.Add(i);
 	}
 }
 
@@ -96,7 +116,8 @@ void AFluidSystem::CheckNeighbours(int ParticleIdx)
 				
 				for (const int idx : ParticlesHashMap[Key].ParticlesKey)
 				{
-					ComputeContact(ParticleIdx, idx);
+					if (ParticleIdx != idx)
+						ComputeContact(ParticleIdx, idx);
 				}
 			}
 		}
@@ -105,39 +126,41 @@ void AFluidSystem::CheckNeighbours(int ParticleIdx)
 
 void AFluidSystem::ComputeContact(int idxA, int idxB)
 {
+	FParticleData& ParticleDataA = ParticleDatas[idxA];
+	FParticleData& ParticleDataB = ParticleDatas[idxB];
+
+	float sqrLen = (ParticleDataB.Location - ParticleDataA.Location).SizeSquared();
+	
+	if (sqrLen <= Config->Radius * Config->Radius)
+	{
+		ParticleContacts.Push({idxA, idxB, FMath::Clamp(FMath::Sqrt(sqrLen), MinRadius, Config->Radius)});
+	}
 }
 
 void AFluidSystem::ComputeDensity()
 {
 	const float Radius = Config->Radius;
-	TMap<int, float> WeightMap;
 	//float Mass = Config->Mass;
 
-	//const float BaseWeight = KernelDefault(0.0f, Radius);
-	//for (FParticleData& ParticleData : ParticleDatas)
-	//{
-	//	ParticleData.Density = BaseWeight;
-	//}
+	const float BaseWeight = KernelDefault(0.0f, Radius);
+	for (FParticleData& ParticleData : ParticleDatas)
+	{
+		ParticleData.Density = BaseWeight;
+	}
 
 	for (FParticleContact& ParticleContact : ParticleContacts)
 	{
-		if(!WeightMap.Contains(ParticleContact.KeyA))
-			WeightMap[ParticleContact.KeyA] = 0;
+		//const FVector& aPos = ParticleDatas[ParticleContact.KeyA].Location;
+		//const FVector& bPos = ParticleDatas[ParticleContact.KeyB].Location;
 
-		if(!WeightMap.Contains(ParticleContact.KeyB))
-			WeightMap[ParticleContact.KeyB] = 0;
-		
 		const float Weight = KernelDefault(ParticleContact.Distance, Radius);
-		
-		WeightMap[ParticleContact.KeyA] += Weight;
-		WeightMap[ParticleContact.KeyB] += Weight;
-		//ParticleDatas[ParticleContact.KeyA].Density += Weight;
-		//ParticleDatas[ParticleContact.KeyB].Density += Weight;
+		ParticleDatas[ParticleContact.KeyA].Density += Weight;
+		ParticleDatas[ParticleContact.KeyB].Density += Weight;
 	}
 
-	for (int i = 0; i < ParticleDatas.Num(); i++)
+	for (FParticleData& ParticleData : ParticleDatas)
 	{
-		ParticleDatas[i].Density += Config->Mass * WeightMap[i];
+		ParticleData.Density *= Config->Mass;
 	}
 }
 
@@ -193,47 +216,30 @@ void AFluidSystem::ComputeSurfaceTension()
 void AFluidSystem::AddPressureForces()
 {
 	const float Radius = Config->Radius;
-	//const float Mass = Config->Mass;
+	const float Mass = Config->Mass;
 
-	TMap<int, FVector> PressureMap;
-	
 	for (FParticleContact& ParticleContact : ParticleContacts)
 	{
-		FParticleData& ParticleDataA = ParticleDatas[ParticleContact.KeyA];
-		FParticleData& ParticleDataB = ParticleDatas[ParticleContact.KeyB];
+		const FParticleData& ParticleDataA = ParticleDatas[ParticleContact.KeyA];
+		const FParticleData& ParticleDataB = ParticleDatas[ParticleContact.KeyB];
+		
+		const FVector& APos = ParticleDatas[ParticleContact.KeyA].Location;
+		const FVector& BPos = ParticleDatas[ParticleContact.KeyB].Location;
 
-		if(!PressureMap.Contains(ParticleContact.KeyA))
-			PressureMap[ParticleContact.KeyA] = FVector::ZeroVector;
-		if(!PressureMap.Contains(ParticleContact.KeyB))
-			PressureMap[ParticleContact.KeyB] = FVector::ZeroVector;
+		FVector R = APos - BPos;
+		const float Length = ParticleContact.Distance;
+
+
+		float PressureAcc = -Mass * (ParticleDataA.Pressure + ParticleDataB.Pressure) / 2.0f;
+		// PressureAcc +=  0.02f * Mass * (Config->Stiffness * (ParticleDataA.Density + ParticleDataB.Density)) * dW;
+
+		// PressureMap[ParticleContact.KeyA] += (Pressure / (2.0f * ParticleDataB.Density)) * KernelSpikyGradientFactorVector(ParticleDataB.Location - ParticleDataA.Location, Radius);
 		
-		float Pressure = ParticleDataA.Pressure + ParticleDataB.Pressure;
-		
-		PressureMap[ParticleContact.KeyA] += (Pressure / (2.0f * ParticleDataB.Density)) * KernelSpikyGradientFactorVector(ParticleDataB.Location - ParticleDataA.Location, Radius);
-		
-		
-		
-		PressureMap[ParticleContact.KeyA] += (Pressure / (2.0f * ParticleDataA.Density)) * KernelSpikyGradientFactorVector(ParticleDataA.Location - ParticleDataB.Location, Radius);
-		//Old CODE
-		//const FParticleData& ParticleDataA = ParticleDatas[ParticleContact.KeyA];
-		//const FParticleData& ParticleDataB = ParticleDatas[ParticleContact.KeyB];
-		//
-		//const FVector& APos = ParticleDatas[ParticleContact.KeyA].Location;
-		//const FVector& BPos = ParticleDatas[ParticleContact.KeyB].Location;
-		//
-		//FVector R = APos - BPos;
-		//const float Length = ParticleContact.Distance;
-		//
-		//FVector PressureAcc = R * -Mass * ((ParticleDataA.Pressure + ParticleDataB.Pressure) / (2.0f * ParticleDataA.Density * ParticleDataB.Density)) * KernelSpikyGradientFactor(Length, Radius);
-		//PressureAcc += R * 0.02f * Mass * ((Config->Stiffness * (ParticleDataA.Density + ParticleDataB.Density)) / (2.0f * ParticleDataA.Density * ParticleDataB.Density)) * KernelSpikyGradientFactor(Length * 0.8f, Radius);
-		//ParticleDatas[ParticleContact.KeyA].Acceleration += PressureAcc;
-		//ParticleDatas[ParticleContact.KeyB].Acceleration -= PressureAcc;
+		ParticleDatas[ParticleContact.KeyA].Acceleration += PressureAcc / (ParticleDataB.Density) * KernelSpikyGradientFactorVector(R, Radius) * 100.f;
+		ParticleDatas[ParticleContact.KeyB].Acceleration += PressureAcc / (ParticleDataA.Density) * KernelSpikyGradientFactorVector(-R, Radius) * 100.f;
 	}
+
 	
-	for (int i = 0; i < ParticleDatas.Num(); i++)
-	{
-		ParticleDatas[i].Acceleration += -Config->Mass * PressureMap[i];
-	}
 }
 
 void AFluidSystem::AddViscosityForces()
@@ -242,41 +248,20 @@ void AFluidSystem::AddViscosityForces()
 	const float Mass = Config->Mass;
 	const float Viscosity = Config->Viscosity;
 
-	TMap<int, FVector> ViscosityMap;
-	
 	for (FParticleContact& ParticleContact : ParticleContacts)
 	{
 		FParticleData& ParticleDataA = ParticleDatas[ParticleContact.KeyA];
 		FParticleData& ParticleDataB = ParticleDatas[ParticleContact.KeyB];
-
-		if(!ViscosityMap.Contains(ParticleContact.KeyA))
-			ViscosityMap[ParticleContact.KeyA] = FVector::ZeroVector;
-		if(!ViscosityMap.Contains(ParticleContact.KeyB))
-			ViscosityMap[ParticleContact.KeyB] = FVector::ZeroVector;
-
-		ViscosityMap[ParticleContact.KeyA] += (ParticleDataB.Velocity - ParticleDataA.Velocity)/ParticleDataB.Density * KernelViscosityLaplacian(ParticleContact.Distance, Radius);
 		
-	}
+		const FVector& APos = ParticleDatas[ParticleContact.KeyA].Location;
+		const FVector& BPos = ParticleDatas[ParticleContact.KeyB].Location;
 
-	//Old code.
-	//for (FParticleContact& ParticleContact : ParticleContacts)
-	//{
-	//	FParticleData& ParticleDataA = ParticleDatas[ParticleContact.KeyA];
-	//	FParticleData& ParticleDataB = ParticleDatas[ParticleContact.KeyB];
-	//	
-	//	const FVector& APos = ParticleDatas[ParticleContact.KeyA].Location;
-	//	const FVector& BPos = ParticleDatas[ParticleContact.KeyB].Location;
-	//
-	//	FVector DeltaVel = ParticleDataA.Velocity - ParticleDataB.Velocity;
-	//	const FVector ViscosityAcc = DeltaVel * -Mass * (Viscosity / (2.0f * ParticleDataA.Density * ParticleDataB.Density)) * KernelViscosityLaplacian(ParticleContact.Distance, Radius);
-	//
-	//	ParticleDataA.Acceleration += ViscosityAcc;
-	//	ParticleDataB.Acceleration -= ViscosityAcc;
-	//}
-	
-	for (int i = 0; i < ParticleDatas.Num(); i++)
-	{
-		ParticleDatas[i].Acceleration += Config->Viscosity * Config->Mass * ViscosityMap[i];
+		FVector DeltaVel = ParticleDataA.Velocity - ParticleDataB.Velocity;
+		const FVector ViscosityAcc = DeltaVel * -Mass * (Viscosity / (2.0f * ParticleDataA.Density * ParticleDataB.Density)) * KernelViscosityLaplacian(ParticleContact.Distance, Radius);
+		// ViscosityMap[ParticleContact.KeyA] += (-DeltaVel)/ParticleDataB.Density * KernelViscosityLaplacian(ParticleContact.Distance, Radius);
+		
+		ParticleDataA.Acceleration += ViscosityAcc;
+		ParticleDataB.Acceleration -= ViscosityAcc;
 	}
 }
 
@@ -293,25 +278,44 @@ void AFluidSystem::ApplyBorderConstraints()
 			Location.X = Config->MinCoords.X;
 			ParticleData.Velocity.X *= -Restitution;
 			ParticleData.Velocity.Y *= Friction;
+			ParticleData.Velocity.Z *= Friction;
 		}
 		else if (Location.X >= Config->MaxCoords.X && ParticleData.Velocity.X > 0.0f)
 		{
 			Location.X = Config->MaxCoords.X;
 			ParticleData.Velocity.X *= -Restitution;
 			ParticleData.Velocity.Y *= Friction;
+			ParticleData.Velocity.Z *= Friction;
 		}
 
 		if (Location.Y <= Config->MinCoords.Y  && ParticleData.Velocity.Y < 0.0f)
 		{
 			Location.Y = Config->MinCoords.Y;
 			ParticleData.Velocity.Y *= -Restitution;
+			ParticleData.Velocity.Z *= Friction;
 			ParticleData.Velocity.X *= Friction;
 		}
 		else if (Location.Y >= Config->MaxCoords.Y  && ParticleData.Velocity.Y > 0.0f)
 		{
 			Location.Y = Config->MaxCoords.Y;
 			ParticleData.Velocity.Y *= -Restitution;
+			ParticleData.Velocity.Z *= Friction;
 			ParticleData.Velocity.X *= Friction;
+		}
+
+		if (Location.Z <= Config->MinCoords.Z  && ParticleData.Velocity.Z < 0.0f)
+		{
+			Location.Z = Config->MinCoords.Z;
+			ParticleData.Velocity.Z *= -Restitution;
+			ParticleData.Velocity.X *= Friction;
+			ParticleData.Velocity.Y *= Friction;
+		}
+		else if (Location.Z >= Config->MaxCoords.Z  && ParticleData.Velocity.Z > 0.0f)
+		{
+			Location.Z = Config->MaxCoords.Z;
+			ParticleData.Velocity.Z *= -Restitution;
+			ParticleData.Velocity.X *= Friction;
+			ParticleData.Velocity.Y *= Friction;
 		}
 	}
 }
@@ -325,7 +329,7 @@ void AFluidSystem::Integrate(float DeltaTime)
 			ParticleData.Acceleration.Normalize();
 			ParticleData.Acceleration *= Config->MaxAcceleration;
 		}
-		FVector Gravity {0.0f, 0.0f, -9.81f};
+		FVector Gravity {0.0f, 0.0f, -981.f};
 		ParticleData.Velocity += (ParticleData.Acceleration + Gravity) * DeltaTime;
 		
 		if(ParticleData.Velocity.Size() > Config->MaxSpeed)
@@ -342,8 +346,9 @@ void AFluidSystem::UpdateRenderData_Implementation()
 {
 }
 
-float AFluidSystem::KernelDefault(const float R, const float H)
+float AFluidSystem::KernelDefault(float R, float H)
 {
+
 	const float H2 = H * H;
 	const float R2 = R * R;
 	float Res = 315.0f / (64.0f * PI * FMath::Pow(H, 9));
@@ -360,8 +365,9 @@ float AFluidSystem::KernelDefault(const float R, const float H)
 	//return (Kernel * Kernel * Kernel) * (4.0f / (PI * H4 * H4));
 }
 
-float AFluidSystem::KernelDefaultGradientFactor(const float R, const float H)
+float AFluidSystem::KernelDefaultGradientFactor(float R, float H)
 {
+
 	const float H2 = H * H;
 	const float R2 = R * R;
 
@@ -372,8 +378,9 @@ float AFluidSystem::KernelDefaultGradientFactor(const float R, const float H)
 	//return -(Kernel * Kernel) * (6.0f / (PI * H4 * H4));
 }
 
-float AFluidSystem::KernelDefaultLaplacian(const float R, const float H)
+float AFluidSystem::KernelDefaultLaplacian(float R, float H)
 {
+
 	const float H2 = H * H;
 	const float R2 = R * R;
 
@@ -385,8 +392,9 @@ float AFluidSystem::KernelDefaultLaplacian(const float R, const float H)
 }
 
 
-float AFluidSystem::KernelSpikyGradientFactorNorm(const float R, const float H)
+float AFluidSystem::KernelSpikyGradientFactorNorm(float R, float H)
 {
+
 	float Res = 15.0f / (PI * FMath::Pow(H, 6));
 	
 	if(0.0f <= abs(R) && abs(R) <= H)
@@ -401,7 +409,7 @@ float AFluidSystem::KernelSpikyGradientFactorNorm(const float R, const float H)
 	//return Kernel * Kernel * (-15.0f / (PI * H5));
 }
 
-float AFluidSystem::KernelSpikyGradientFactor(const float R, const float H)
+float AFluidSystem::KernelSpikyGradientFactor(float R, float H)
 {
 	return -45.0f / (PI * FMath::Pow(H, 6)) * (R / abs(R)) * FMath::Pow(H - abs(R), 2);
 	//const float H2 = H * H;
@@ -410,12 +418,12 @@ float AFluidSystem::KernelSpikyGradientFactor(const float R, const float H)
 	//return Kernel * Kernel * (-15.0f / (PI * H5 * R));
 }
 
-FVector AFluidSystem::KernelSpikyGradientFactorVector(const FVector R, const float H)
+FVector AFluidSystem::KernelSpikyGradientFactorVector(FVector R, float H)
 {
 	return -45.0f / (PI * FMath::Pow(H, 6)) * R.GetSafeNormal() * FMath::Pow(H - R.Size(), 2);
 }
 
-float AFluidSystem::KernelViscosityLaplacian(const float R, const float H)
+float AFluidSystem::KernelViscosityLaplacian(float R, float H)
 {
 	return 45.0f / (PI * FMath::Pow(H, 6)) * (H - R);
 	//const float H2 = H * H;
@@ -423,7 +431,7 @@ float AFluidSystem::KernelViscosityLaplacian(const float R, const float H)
 	//return Kernel * (30.0f / (PI * H2 * H2 * H));
 }
 
-float AFluidSystem::KernelPoly6hGradientFactor(const float R, const float H)
+float AFluidSystem::KernelPoly6hGradientFactor(float R, float H)
 {
 	const float H2 = H * H;
 	const float Kernel = H2 - R * R;

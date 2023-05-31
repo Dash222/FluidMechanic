@@ -15,13 +15,13 @@ struct FParticleContact
 {
 	GENERATED_BODY()
 
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly)
 	int KeyA;
 
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly)
 	int KeyB;
 
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly)
 	float Distance;
 };
 
@@ -75,7 +75,7 @@ private:
 	UFUNCTION()
 	void UpdateHashMap();
 
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	int GetHashKey(const FVector& Location) const;
 
 	UFUNCTION()
@@ -119,23 +119,23 @@ public:
 	static float KernelDefault(float R, float H);
 
 	UFUNCTION()
-	static float KernelDefaultGradientFactor(const float R, const float H);
+	static float KernelDefaultGradientFactor(float R, float H);
 	
 	UFUNCTION()
-	static float KernelDefaultLaplacian(const float R, const float H);
+	static float KernelDefaultLaplacian(float R, float H);
 	
 	UFUNCTION()
-	static float KernelSpikyGradientFactorNorm(const float R, const float H);
+	static float KernelSpikyGradientFactorNorm(float R, float H);
 	
 	UFUNCTION()
-	static float KernelSpikyGradientFactor(const float R, const float H);
+	static float KernelSpikyGradientFactor(float R, float H);
 
 	UFUNCTION()
 	FVector KernelSpikyGradientFactorVector(FVector R, float H);
 
 	UFUNCTION()
-	static float KernelViscosityLaplacian(const float R, const float H);
+	static float KernelViscosityLaplacian(float R, float H);
 	
 	UFUNCTION()
-	static float KernelPoly6hGradientFactor(const float R, const float H);
+	static float KernelPoly6hGradientFactor(float R, float H);
 };
